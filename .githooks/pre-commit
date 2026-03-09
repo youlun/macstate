@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Pre-commit hook: lint only staged shell and Python files
+# Activate: git config core.hooksPath .githooks
+# Skip:     git commit --no-verify
+set -e
+
+# ShellCheck staged .sh files
+staged_sh=$(git diff --cached --name-only --diff-filter=ACM | grep '\.sh$' || true)
+if [ -n "$staged_sh" ]; then
+    echo "ShellCheck: $staged_sh"
+    # shellcheck disable=SC2086
+    shellcheck -x $staged_sh
+fi
+
+# Ruff on staged .py files
+staged_py=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
+if [ -n "$staged_py" ] && command -v ruff &>/dev/null; then
+    echo "Ruff: $staged_py"
+    # shellcheck disable=SC2086
+    ruff check $staged_py
+fi
