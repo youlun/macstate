@@ -33,23 +33,48 @@ HASH_MAX_SIZE = 1 * 1024 * 1024  # 1MB
 
 # Files to never hash (sensitive private key material)
 HASH_EXCLUDE_NAMES = {
-    "id_rsa", "id_ecdsa", "id_ed25519", "id_dsa", "id_xmss",
-    "secring.gpg", "trustdb.gpg",
+    "id_rsa",
+    "id_ecdsa",
+    "id_ed25519",
+    "id_dsa",
+    "id_xmss",
+    "secring.gpg",
+    "trustdb.gpg",
 }
 HASH_EXCLUDE_EXTENSIONS = {".pem", ".p12", ".pfx", ".key"}
 HASH_EXCLUDE_PATHS = {"/private-keys-v1.d/"}
 
-# Dotfiles whose full content we store
-DOTFILE_CONTENT_LIST = [
-    ".zshrc", ".zprofile", ".bashrc", ".bash_profile", ".gitconfig",
-    ".ssh/config", ".config/chezmoi/chezmoi.toml",
-    ".config/starship.toml", ".config/mise/config.toml",
-    ".config/ghostty/config", ".config/git/ignore",
+# Dotfiles whose full content we store (fallback if dotfiles.txt not found)
+_DOTFILE_CONTENT_FALLBACK = [
+    ".zshrc",
+    ".zprofile",
+    ".bashrc",
+    ".bash_profile",
+    ".gitconfig",
+    ".ssh/config",
+    ".config/chezmoi/chezmoi.toml",
+    ".config/starship.toml",
+    ".config/mise/config.toml",
+    ".config/ghostty/config",
+    ".config/git/ignore",
     ".config/homebrew/Brewfile",
     ".config/atuin/config.toml",
     ".config/bat/config",
     "Library/Application Support/lazygit/config.yml",
 ]
+
+
+def load_dotfile_list() -> list[str]:
+    """Load dotfile list from lib/dotfiles.txt, falling back to hardcoded list."""
+    dotfile_path = Path(__file__).parent / "dotfiles.txt"
+    if dotfile_path.is_file():
+        lines = dotfile_path.read_text().splitlines()
+        result = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
+        if result:
+            return result
+    return list(_DOTFILE_CONTENT_FALLBACK)
+
+
 DOTFILE_MAX_SIZE = 100 * 1024  # 100KB
 
 
@@ -294,7 +319,7 @@ def scan_home_dotfiles(home: str, db: sqlite3.Connection, count: list):
 
 def collect_dotfile_contents(home: str, db: sqlite3.Connection):
     """Store full contents of key dotfiles."""
-    for relpath in DOTFILE_CONTENT_LIST:
+    for relpath in load_dotfile_list():
         filepath = os.path.join(home, relpath)
         if not os.path.isfile(filepath):
             continue

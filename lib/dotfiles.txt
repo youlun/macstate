@@ -1,0 +1,18 @@
+# Dotfiles whose full content is captured in snapshots.
+# Used by both lib/fs_index.py and collectors/17-dotfile-contents.sh.
+# Paths are relative to $HOME.
+.zshrc
+.zprofile
+.bashrc
+.bash_profile
+.gitconfig
+.ssh/config
+.config/chezmoi/chezmoi.toml
+.config/starship.toml
+.config/mise/config.toml
+.config/ghostty/config
+.config/git/ignore
+.config/homebrew/Brewfile
+.config/atuin/config.toml
+.config/bat/config
+Library/Application Support/lazygit/config.yml
