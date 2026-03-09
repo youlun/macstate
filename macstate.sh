@@ -39,6 +39,8 @@ MODES:
   --diff <snap1> <snap2>     Diff two snapshots
   --query <snapshot>         Interactive SQLite query mode
   --export-json <snapshot>   Export snapshot as JSON
+  --view <snapshot>          Open snapshot in browser as HTML
+  --view <snap1> <snap2>     Open diff of two snapshots in browser
   --help                     Show this help
 
 SNAPSHOT OPTIONS:
@@ -86,6 +88,8 @@ DIFF_SNAP2=""
 DIFF_FILTER=""
 QUERY_SNAP=""
 EXPORT_JSON_SNAP=""
+VIEW_SNAP1=""
+VIEW_SNAP2=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -97,6 +101,14 @@ while [ $# -gt 0 ]; do
         --only)          ONLY_COLLECTORS="${2:-}"; shift ;;
         --skip)          SKIP_COLLECTORS="${2:-}"; shift ;;
         --filter)        DIFF_FILTER="${2:-}"; shift ;;
+        --view)
+            MODE="view"; VIEW_SNAP1="${2:-}"
+            if [ -n "${3:-}" ] && [ -d "${3:-}" ]; then
+                VIEW_SNAP2="${3:-}"; shift 2
+            else
+                shift
+            fi
+            ;;
         --no-filesystem) NO_FILESYSTEM=true ;;
         --no-system)     NO_SYSTEM=true ;;
         *)               echo "Unknown option: $1"; exit 1 ;;
@@ -127,6 +139,25 @@ if [ "$MODE" = "export-json" ]; then
         exit 1
     fi
     python3 "$SCRIPT_DIR/lib/json_export.py" "$EXPORT_JSON_SNAP"
+    exit $?
+fi
+
+# ── View mode ────────────────────────────────────────────────────────────────
+
+if [ "$MODE" = "view" ]; then
+    if [ -z "$VIEW_SNAP1" ] || [ ! -d "$VIEW_SNAP1" ]; then
+        fail "Usage: $0 --view <snapshot_dir> [snapshot_dir2]"
+        exit 1
+    fi
+    if [ -n "$VIEW_SNAP2" ] && [ ! -d "$VIEW_SNAP2" ]; then
+        fail "Second snapshot directory does not exist: $VIEW_SNAP2"
+        exit 1
+    fi
+    html_out=$(python3 "$SCRIPT_DIR/lib/html_export.py" "$VIEW_SNAP1" ${VIEW_SNAP2:+"$VIEW_SNAP2"})
+    html_file="${html_out#Exported to }"
+    if [ -f "$html_file" ]; then
+        open "$html_file" 2>/dev/null || true
+    fi
     exit $?
 fi
 

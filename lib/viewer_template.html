@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>macstate</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --surface: #f5f5f7;
+  --surface2: #e8e8ed;
+  --border: #d2d2d7;
+  --text: #1d1d1f;
+  --text-dim: #6e6e73;
+  --accent: #0071e3;
+  --green: #248a3d;
+  --red: #d70015;
+  --orange: #bf5a00;
+  --blue: #0040dd;
+  --added-bg: #dafbe1;
+  --removed-bg: #ffebe9;
+  --hunk-bg: #ddf4ff;
+  --badge-new: #e6f4ea;
+  --badge-del: #fce8e6;
+  --badge-chg: #fef7e0;
+  --badge-new-text: #137333;
+  --badge-del-text: #c5221f;
+  --badge-chg-text: #b05a00;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --surface2: #2c2c2e;
+    --border: #3a3a3c;
+    --text: #f5f5f7;
+    --text-dim: #98989d;
+    --accent: #2997ff;
+    --green: #30d158;
+    --red: #ff453a;
+    --orange: #ff9f0a;
+    --blue: #64d2ff;
+    --added-bg: #0d2a16;
+    --removed-bg: #2a0d0d;
+    --hunk-bg: #0d1b2a;
+    --badge-new: #0d2a16;
+    --badge-del: #2a0d0d;
+    --badge-chg: #2a1f0d;
+    --badge-new-text: #30d158;
+    --badge-del-text: #ff453a;
+    --badge-chg-text: #ff9f0a;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.ms-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+.ms-header {
+  text-align: center;
+  padding: 32px 0 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.ms-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: -0.5px;
+}
+.ms-header .ms-subtitle {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+.ms-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.ms-card h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  letter-spacing: -0.2px;
+}
+.ms-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+.ms-meta-item {
+  display: flex;
+  flex-direction: column;
+}
+.ms-meta-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+.ms-meta-value {
+  font-size: 14px;
+  font-weight: 500;
+}
+.ms-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.ms-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ms-stat-num {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+.ms-stat-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+details.ms-section {
+  margin-bottom: 8px;
+}
+details.ms-section > summary {
+  cursor: pointer;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+details.ms-section > summary::-webkit-details-marker { display: none; }
+details.ms-section > summary::before {
+  content: '▶';
+  font-size: 10px;
+  color: var(--text-dim);
+  transition: transform 0.15s;
+}
+details.ms-section[open] > summary::before {
+  transform: rotate(90deg);
+}
+details.ms-section > .ms-content {
+  padding: 12px 16px;
+  border-left: 2px solid var(--border);
+  margin: 4px 0 4px 8px;
+}
+pre.ms-pre {
+  margin: 0;
+  padding: 12px;
+  background: var(--surface2);
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.ms-diff-line { display: block; }
+.ms-diff-add { background: var(--added-bg); color: var(--green); }
+.ms-diff-del { background: var(--removed-bg); color: var(--red); }
+.ms-diff-hdr { color: var(--text-dim); font-weight: 600; }
+.ms-diff-hunk { background: var(--hunk-bg); color: var(--blue); font-weight: 600; }
+.ms-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.ms-badge-new { background: var(--badge-new); color: var(--badge-new-text); }
+.ms-badge-del { background: var(--badge-del); color: var(--badge-del-text); }
+.ms-badge-chg { background: var(--badge-chg); color: var(--badge-chg-text); }
+table.ms-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.ms-table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 2px solid var(--border);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+.ms-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+.ms-table tr:last-child td { border-bottom: none; }
+.ms-diff-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.ms-diff-meta-col {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 16px;
+}
+.ms-diff-meta-col h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--text-dim);
+}
+.ms-summary-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ms-summary-item {
+  text-align: center;
+  min-width: 100px;
+}
+.ms-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 32px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: -0.3px;
+}
+.ms-count {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 14px;
+}
+.ms-filter {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  outline: none;
+}
+.ms-filter:focus { border-color: var(--accent); }
+.ms-empty {
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 12px 0;
+}
+.ms-group-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 20px 0 8px;
+  color: var(--text-dim);
+}
+@media (max-width: 600px) {
+  .ms-diff-meta { grid-template-columns: 1fr; }
+  .ms-meta-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="ms-container" id="ms-app"></div>
+<script>
+/* __MACSTATE_DATA__ */
+
+(function() {
+  const app = document.getElementById('ms-app');
+
+  function h(tag, attrs, ...children) {
+    const el = document.createElement(tag);
+    if (attrs) Object.entries(attrs).forEach(([k, v]) => {
+      if (k === 'className') el.className = v;
+      else if (k === 'innerHTML') el.innerHTML = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
+      else el.setAttribute(k, v);
+    });
+    children.flat().forEach(c => {
+      if (typeof c === 'string') el.appendChild(document.createTextNode(c));
+      else if (c) el.appendChild(c);
+    });
+    return el;
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function fmtBytes(n) {
+    if (n == null) return '—';
+    if (n < 1024) return n + ' B';
+    if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+    if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+    return (n / 1073741824).toFixed(1) + ' GB';
+  }
+
+  function fmtNum(n) {
+    return n != null ? n.toLocaleString() : '—';
+  }
+
+  function renderDiffPre(diffText) {
+    if (!diffText) return h('pre', {className: 'ms-pre'}, '(no diff)');
+    const lines = diffText.split('\n');
+    const spans = lines.map(line => {
+      let cls = 'ms-diff-line';
+      if (line.startsWith('+++') || line.startsWith('---')) cls += ' ms-diff-hdr';
+      else if (line.startsWith('@@')) cls += ' ms-diff-hunk';
+      else if (line.startsWith('+')) cls += ' ms-diff-add';
+      else if (line.startsWith('-')) cls += ' ms-diff-del';
+      return '<span class="' + cls + '">' + esc(line) + '\n</span>';
+    });
+    return h('pre', {className: 'ms-pre', innerHTML: spans.join('')});
+  }
+
+  function makeSection(title, badge, content) {
+    const det = h('details', {className: 'ms-section'});
+    const sum = h('summary', null);
+    sum.appendChild(document.createTextNode(title));
+    if (badge) {
+      sum.appendChild(document.createTextNode(' '));
+      sum.appendChild(badge);
+    }
+    det.appendChild(sum);
+    const wrap = h('div', {className: 'ms-content'});
+    if (typeof content === 'string') {
+      wrap.appendChild(h('pre', {className: 'ms-pre'}, content));
+    } else {
+      wrap.appendChild(content);
+    }
+    det.appendChild(wrap);
+    return det;
+  }
+
+  function makeTable(headers, rows, filterCol) {
+    const container = h('div');
+    if (rows.length > 20) {
+      const input = h('input', {
+        className: 'ms-filter',
+        type: 'text',
+        placeholder: 'Filter by path...',
+      });
+      container.appendChild(input);
+      input.addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        Array.from(tbody.children).forEach(tr => {
+          const cell = tr.children[filterCol || 0];
+          tr.style.display = cell && cell.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+      });
+    }
+    const table = h('table', {className: 'ms-table'});
+    const thead = h('tr');
+    headers.forEach(hdr => thead.appendChild(h('th', null, hdr)));
+    table.appendChild(h('thead', null, thead));
+    const tbody = h('tbody');
+    rows.forEach(cells => {
+      const tr = h('tr');
+      cells.forEach(c => tr.appendChild(h('td', null, String(c != null ? c : '—'))));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+    return container;
+  }
+
+  function metaCard(metadata, title) {
+    const card = h('div', {className: 'ms-card'});
+    if (title) card.appendChild(h('h2', null, title));
+    const grid = h('div', {className: 'ms-meta-grid'});
+    const labels = {
+      hostname: 'Hostname', macos_version: 'macOS', build: 'Build',
+      snapshot_time: 'Captured', username: 'User', schema_version: 'Schema'
+    };
+    const order = ['hostname', 'macos_version', 'build', 'username', 'snapshot_time'];
+    order.forEach(key => {
+      if (metadata[key]) {
+        const item = h('div', {className: 'ms-meta-item'});
+        item.appendChild(h('span', {className: 'ms-meta-label'}, labels[key] || key));
+        item.appendChild(h('span', {className: 'ms-meta-value'}, metadata[key]));
+        grid.appendChild(item);
+      }
+    });
+    card.appendChild(grid);
+    return card;
+  }
+
+  function statsCard(files) {
+    const card = h('div', {className: 'ms-card'});
+    card.appendChild(h('h2', null, 'Filesystem Index'));
+    const stats = h('div', {className: 'ms-stats'});
+    const items = [
+      [fmtNum(files.total), 'Total'],
+      [fmtNum(files.by_type.f || 0), 'Files'],
+      [fmtNum(files.by_type.d || 0), 'Directories'],
+      [fmtNum(files.by_type.l || 0), 'Symlinks'],
+    ];
+    items.forEach(([num, label]) => {
+      const s = h('div', {className: 'ms-stat'});
+      s.appendChild(h('span', {className: 'ms-stat-num'}, num));
+      s.appendChild(h('span', {className: 'ms-stat-label'}, label));
+      stats.appendChild(s);
+    });
+    card.appendChild(stats);
+    return card;
+  }
+
+  function groupCaptures(captures) {
+    const groups = {};
+    const topLevel = [];
+    Object.entries(captures).forEach(([path, content]) => {
+      if (path.includes('/')) {
+        const dir = path.split('/')[0];
+        if (!groups[dir]) groups[dir] = [];
+        groups[dir].push({path, content});
+      } else {
+        topLevel.push({path, content});
+      }
+    });
+    return {topLevel, groups};
+  }
+
+  function prettyName(filename) {
+    return filename.replace(/\.txt$/, '').replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  // ── Single snapshot ──
+
+  function renderSingle(data) {
+    const snap = data.snapshot;
+    const header = h('div', {className: 'ms-header'});
+    header.appendChild(h('h1', null, 'macstate'));
+    header.appendChild(h('div', {className: 'ms-subtitle'},
+      snap.metadata.hostname || snap.snapshot_dir));
+    app.appendChild(header);
+
+    app.appendChild(metaCard(snap.metadata));
+
+    if (snap.files.total > 0) {
+      app.appendChild(statsCard(snap.files));
+    }
+
+    // Collector captures
+    const {topLevel, groups} = groupCaptures(snap.captures);
+    if (topLevel.length || Object.keys(groups).length) {
+      app.appendChild(h('div', {className: 'ms-section-title'}, 'System Captures'));
+      topLevel.forEach(({path, content}) => {
+        app.appendChild(makeSection(prettyName(path), null, content));
+      });
+      Object.entries(groups).sort().forEach(([dir, files]) => {
+        const dirSection = h('div');
+        dirSection.appendChild(h('div', {className: 'ms-group-title'}, prettyName(dir)));
+        files.sort((a, b) => a.path.localeCompare(b.path)).forEach(({path, content}) => {
+          const name = path.split('/').slice(1).join('/');
+          dirSection.appendChild(makeSection(name, null, content));
+        });
+        app.appendChild(dirSection);
+      });
+    }
+
+    // Dotfile contents
+    if (Object.keys(snap.dotfile_contents).length) {
+      app.appendChild(h('div', {className: 'ms-section-title'}, 'Dotfile Contents'));
+      Object.entries(snap.dotfile_contents).sort().forEach(([path, info]) => {
+        const name = path.split('/').pop();
+        app.appendChild(makeSection(name, null, info.content || '(empty)'));
+      });
+    }
+
+    document.title = 'macstate — ' + (snap.metadata.hostname || 'Snapshot');
+  }
+
+  // ── Diff view ──
+
+  function renderDiff(data) {
+    const {sql_diff, pref_diffs, dotfile_diffs} = data;
+    const s = sql_diff.summary;
+
+    const header = h('div', {className: 'ms-header'});
+    header.appendChild(h('h1', null, 'macstate diff'));
+    const snap1Name = data.snap_a.snapshot_dir.split('/').pop();
+    const snap2Name = data.snap_b.snapshot_dir.split('/').pop();
+    header.appendChild(h('div', {className: 'ms-subtitle'},
+      snap1Name + '  →  ' + snap2Name));
+    app.appendChild(header);
+
+    // Metadata comparison
+    function makeMetaCol(title, meta) {
+      const col = h('div', {className: 'ms-diff-meta-col'});
+      col.appendChild(h('h3', null, title));
+      const grid = h('div', {className: 'ms-meta-grid'});
+      Object.entries(meta).forEach(([k, v]) => {
+        const item = h('div', {className: 'ms-meta-item'});
+        item.appendChild(h('span', {className: 'ms-meta-label'}, k));
+        item.appendChild(h('span', {className: 'ms-meta-value'}, v));
+        grid.appendChild(item);
+      });
+      col.appendChild(grid);
+      return col;
+    }
+    const metaRow = h('div', {className: 'ms-diff-meta'});
+    metaRow.appendChild(makeMetaCol('Before', sql_diff.meta_a));
+    metaRow.appendChild(makeMetaCol('After', sql_diff.meta_b));
+    app.appendChild(metaRow);
+
+    // Summary
+    const summaryCard = h('div', {className: 'ms-card'});
+    summaryCard.appendChild(h('h2', null, 'Summary'));
+    const sg = h('div', {className: 'ms-summary-grid'});
+    [
+      [s.total_before, 'Before', null],
+      [s.total_after, 'After', null],
+      [s.new_files, 'New', 'ms-badge-new'],
+      [s.deleted_files, 'Deleted', 'ms-badge-del'],
+      [s.changed_files, 'Changed', 'ms-badge-chg'],
+      [s.content_changes, 'Content', 'ms-badge-chg'],
+    ].forEach(([num, label, badge]) => {
+      const item = h('div', {className: 'ms-summary-item'});
+      const n = h('div', {className: 'ms-stat-num'}, fmtNum(num));
+      if (badge && num > 0) n.className += ' ' + badge.replace('badge', 'stat');
+      item.appendChild(n);
+      item.appendChild(h('div', {className: 'ms-stat-label'}, label));
+      sg.appendChild(item);
+    });
+    summaryCard.appendChild(sg);
+    app.appendChild(summaryCard);
+
+    // New files
+    if (sql_diff.new_files.length) {
+      app.appendChild(h('div', {className: 'ms-section-title'},
+        ['New Files ', h('span', {className: 'ms-count'}, '(' + fmtNum(s.new_files) + ')')]));
+      app.appendChild(makeTable(
+        ['Path', 'Type', 'Size', 'Modified'],
+        sql_diff.new_files.map(f => [f.filepath, f.filetype, fmtBytes(f.size), f.modified]),
+        0
+      ));
+    }
+
+    // Deleted files
+    if (sql_diff.deleted_files.length) {
+      app.appendChild(h('div', {className: 'ms-section-title'},
+        ['Deleted Files ', h('span', {className: 'ms-count'}, '(' + fmtNum(s.deleted_files) + ')')]));
+      app.appendChild(makeTable(
+        ['Path', 'Type', 'Size'],
+        sql_diff.deleted_files.map(f => [f.filepath, f.filetype, fmtBytes(f.size)]),
+        0
+      ));
+    }
+
+    // Changed files
+    if (sql_diff.changed_files.length) {
+      app.appendChild(h('div', {className: 'ms-section-title'},
+        ['Changed Files ', h('span', {className: 'ms-count'}, '(' + fmtNum(s.changed_files) + ')')]));
+      app.appendChild(makeTable(
+        ['Path', 'Old Size', 'New Size', 'Old Modified', 'New Modified'],
+        sql_diff.changed_files.map(f => [
+          f.filepath, fmtBytes(f.old_size), fmtBytes(f.new_size),
+          f.old_modified, f.new_modified
+        ]),
+        0
+      ));
+    }
+
+    // Content changes
+    if (sql_diff.content_changes.length) {
+      app.appendChild(h('div', {className: 'ms-section-title'},
+        ['Content Changes ', h('span', {className: 'ms-count'},
+          '(' + fmtNum(s.content_changes) + ')')]));
+      app.appendChild(makeTable(
+        ['Path', 'Old Size', 'New Size'],
+        sql_diff.content_changes.map(f => [f.filepath, fmtBytes(f.old_size), fmtBytes(f.new_size)]),
+        0
+      ));
+    }
+
+    // Symlink changes
+    if (sql_diff.symlink_changes.length) {
+      app.appendChild(h('div', {className: 'ms-section-title'}, 'Symlink Changes'));
+      app.appendChild(makeTable(
+        ['Path', 'Old Target', 'New Target'],
+        sql_diff.symlink_changes.map(f => [f.filepath, f.old_target, f.new_target]),
+        0
+      ));
+    }
+
+    // Preference diffs
+    if (pref_diffs.length) {
+      app.appendChild(h('div', {className: 'ms-section-title'},
+        ['Preference Changes ', h('span', {className: 'ms-count'},
+          '(' + pref_diffs.length + ')')]));
+      pref_diffs.forEach(d => {
+        const cls = d.status === 'new' ? 'ms-badge-new'
+          : d.status === 'removed' ? 'ms-badge-del' : 'ms-badge-chg';
+        const badge = h('span', {className: 'ms-badge ' + cls}, d.status);
+        const content = d.diff ? renderDiffPre(d.diff)
+          : h('div', {className: 'ms-empty'}, 'File ' + d.status);
+        app.appendChild(makeSection(d.path, badge, content));
+      });
+    }
+
+    // Dotfile diffs
+    if (dotfile_diffs.length) {
+      app.appendChild(h('div', {className: 'ms-section-title'}, 'Dotfile Changes'));
+      dotfile_diffs.forEach(d => {
+        const cls = d.status === 'new' ? 'ms-badge-new'
+          : d.status === 'removed' ? 'ms-badge-del' : 'ms-badge-chg';
+        const badge = h('span', {className: 'ms-badge ' + cls}, d.status);
+        const name = d.filepath.split('/').pop();
+        let content;
+        if (d.diff) {
+          content = renderDiffPre(d.diff);
+        } else if (d.content) {
+          content = h('pre', {className: 'ms-pre'}, d.content);
+        } else {
+          content = h('div', {className: 'ms-empty'}, 'File ' + d.status);
+        }
+        app.appendChild(makeSection(name, badge, content));
+      });
+    }
+
+    document.title = 'macstate diff — ' + snap1Name + ' vs ' + snap2Name;
+  }
+
+  // ── Entry ──
+
+  if (typeof DATA !== 'undefined') {
+    if (DATA.mode === 'single') renderSingle(DATA);
+    else if (DATA.mode === 'diff') renderDiff(DATA);
+  }
+})();
+</script>
+</body>
+</html>
