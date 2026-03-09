@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Dotfile contents
 # REQUIRES_SUDO: false
 

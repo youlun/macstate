@@ -12,17 +12,16 @@ Features:
 from __future__ import annotations
 
 import argparse
+import grp
 import hashlib
 import os
 import pwd
-import grp
 import sqlite3
 import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 SCHEMA_VERSION = "0.1"
 
@@ -208,6 +207,7 @@ def scan_entry(path: str) -> tuple | None:
         return None
 
     import stat
+
     if stat.S_ISREG(s.st_mode):
         ftype = "f"
     elif stat.S_ISDIR(s.st_mode):
@@ -242,8 +242,9 @@ def scan_entry(path: str) -> tuple | None:
     )
 
 
-def scan_directory(root: str, db: sqlite3.Connection, count: list, errors: list,
-                   exclude_patterns: list[str]):
+def scan_directory(
+    root: str, db: sqlite3.Connection, count: list, errors: list, exclude_patterns: list[str]
+):
     """Walk a directory tree and insert entries into the database."""
     batch = []
     batch_size = 5000

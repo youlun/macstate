@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Appearance, dock, window management
 # REQUIRES_SUDO: false
 

@@ -1,7 +1,9 @@
+# shellcheck shell=bash
 # LABEL: Filesystem index
 # REQUIRES_SUDO: false
 
 collect_filesystem() {
+    # shellcheck disable=SC2034  # required by collector interface
     local outdir="$1"
     local db="$2"
 

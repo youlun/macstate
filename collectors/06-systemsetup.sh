@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: System setup
 # REQUIRES_SUDO: true
 

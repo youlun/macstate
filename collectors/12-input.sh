@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Keyboard, input, accessibility, display
 # REQUIRES_SUDO: false
 

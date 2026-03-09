@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Shell environment
 # REQUIRES_SUDO: false
 

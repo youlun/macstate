@@ -208,6 +208,7 @@ for col_file in "$SCRIPT_DIR"/collectors/[0-9]*.sh; do
     echo "${GREEN}[${COL_COUNT}/${COL_TOTAL}]${RESET} ${BOLD}${_COL_LABEL}${RESET}"
 
     # Source and run the collector function
+    # shellcheck disable=SC1090  # dynamic source by design
     source "$col_file"
     # Derive function name from filename: 01-filesystem.sh -> collect_filesystem
     func_name="collect_${_COL_NAME//-/_}"

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Security
 # REQUIRES_SUDO: false
 

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Installed applications
 # REQUIRES_SUDO: false
 

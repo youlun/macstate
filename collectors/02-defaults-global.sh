@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: NSGlobalDomain defaults
 # REQUIRES_SUDO: false
 

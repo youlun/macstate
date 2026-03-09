@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Login items & launch agents
 # REQUIRES_SUDO: false
 

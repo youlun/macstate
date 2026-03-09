@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Key app domains
 # REQUIRES_SUDO: false
 

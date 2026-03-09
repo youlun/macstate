@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: System plists
 # REQUIRES_SUDO: false
 

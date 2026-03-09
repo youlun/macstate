@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Homebrew packages (detailed)
 # REQUIRES_SUDO: false
 

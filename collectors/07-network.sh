@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Network
 # REQUIRES_SUDO: false
 

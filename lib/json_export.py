@@ -2,7 +2,6 @@
 """Export a macOS snapshot to JSON format."""
 
 import json
-import os
 import sqlite3
 import sys
 from pathlib import Path

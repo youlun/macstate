@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Global packages (npm, pip, gem, mise)
 # REQUIRES_SUDO: false
 

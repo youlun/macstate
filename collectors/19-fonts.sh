@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Installed fonts
 # REQUIRES_SUDO: false
 

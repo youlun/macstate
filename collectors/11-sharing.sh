@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Sharing, Bluetooth, profiles, Time Machine
 # REQUIRES_SUDO: false
 

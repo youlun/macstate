@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Per-domain plist exports
 # REQUIRES_SUDO: false
 

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # LABEL: Power management
 # REQUIRES_SUDO: false
 
