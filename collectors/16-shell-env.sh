@@ -29,5 +29,5 @@ _col_shell_env() {
     echo "=== Environment variables (secrets redacted, transient filtered) ==="
     env | grep -Ev '^(TMPDIR=|_=|SHLVL=|OLDPWD=|TERM_SESSION_ID=|LaunchInstanceID=|SECURITYSESSIONID=|XPC_)' \
         | sort \
-        | sed -E 's/^(.*(_TOKEN|_SECRET|_KEY|_PASSWORD|_CREDENTIAL|_API_KEY|API_KEY|ANTHROPIC_|AWS_SECRET|GITHUB_TOKEN|GH_TOKEN|NPM_TOKEN|HOMEBREW_GITHUB_API_TOKEN)=).*/\1<REDACTED>/'
+        | sed -E 's/^(.*(_TOKEN|_SECRET|_KEY|_PASSWORD|_CREDENTIAL|_API_KEY|_URL|_URI|_DSN|_CONNECTION_STRING|API_KEY|ANTHROPIC_|AWS_SECRET|GITHUB_TOKEN|GH_TOKEN|NPM_TOKEN|HOMEBREW_GITHUB_API_TOKEN)=).*/\1<REDACTED>/'
 }

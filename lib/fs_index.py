@@ -349,25 +349,38 @@ def main():
     start = time.time()
 
     db.execute("BEGIN TRANSACTION")
-    store_metadata(db)
+    try:
+        store_metadata(db)
 
-    # Scan home dotfiles first (non-recursive)
-    scan_home_dotfiles(home, db, count)
+        # Scan home dotfiles first (non-recursive)
+        scan_home_dotfiles(home, db, count)
 
-    # Scan each root
-    for root in scan_roots:
-        scan_directory(root, db, count, errors, exclude_patterns)
+        # Scan each root
+        for root in scan_roots:
+            scan_directory(root, db, count, errors, exclude_patterns)
 
-    # Capture dotfile contents
-    collect_dotfile_contents(home, db)
+        # Capture dotfile contents
+        collect_dotfile_contents(home, db)
 
-    # Create indexes inside the transaction
-    db.execute("CREATE INDEX IF NOT EXISTS idx_files_modified ON files(modified)")
-    db.execute("CREATE INDEX IF NOT EXISTS idx_files_size ON files(size)")
-    db.execute("CREATE INDEX IF NOT EXISTS idx_files_type ON files(filetype)")
-    db.execute("CREATE INDEX IF NOT EXISTS idx_files_sha256 ON files(sha256)")
+        # Create indexes inside the transaction
+        db.execute("CREATE INDEX IF NOT EXISTS idx_files_modified ON files(modified)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_files_size ON files(size)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_files_type ON files(filetype)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_files_sha256 ON files(sha256)")
 
-    db.execute("COMMIT")
+        db.execute("COMMIT")
+    except BaseException:
+        try:
+            db.execute("ROLLBACK")
+        except Exception:
+            pass
+        db.close()
+        # Remove partial DB so caller doesn't mistake it for a valid snapshot
+        try:
+            os.remove(args.db)
+        except OSError:
+            pass
+        raise
 
     elapsed = time.time() - start
     print(

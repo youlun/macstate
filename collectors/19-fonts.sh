@@ -11,5 +11,9 @@ _col_fonts() {
     ls -1 "$REAL_HOME/Library/Fonts/" 2>/dev/null || echo "(none)"
     echo ""
     echo "=== System fonts (names only) ==="
-    system_profiler SPFontsDataType 2>/dev/null | grep "Full Name:" | sed 's/.*Full Name: //' | sort -u || true
+    if command -v timeout &>/dev/null; then
+        timeout 30 system_profiler SPFontsDataType 2>/dev/null | grep "Full Name:" | sed 's/.*Full Name: //' | sort -u || echo "(timed out or unavailable)"
+    else
+        system_profiler SPFontsDataType 2>/dev/null | grep "Full Name:" | sed 's/.*Full Name: //' | sort -u || echo "(unavailable)"
+    fi
 }

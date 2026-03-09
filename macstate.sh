@@ -145,6 +145,9 @@ TIMESTAMP=$(date +"%Y-%m-%d_%H%M%S")
 OUTDIR="$BASE_DIR/$TIMESTAMP"
 DB="$OUTDIR/filesystem.db"
 
+mkdir -p "$BASE_DIR"
+chmod 700 "$BASE_DIR" 2>/dev/null || true
+# shellcheck disable=SC2174  # -m intentionally applies to leaf only; parent handled above
 mkdir -p -m 700 "$OUTDIR"
 
 if [ "$HAVE_SUDO" = true ]; then
@@ -214,6 +217,19 @@ for col_file in "$SCRIPT_DIR"/collectors/[0-9]*.sh; do
         warn "No function $func_name found in $col_file"
     fi
 done
+
+# ── Warn if --only matched nothing ────────────────────────────────────────────
+
+COL_RAN=$((COL_COUNT - COL_SKIPPED))
+if [ -n "${ONLY_COLLECTORS:-}" ] && [ "$COL_RAN" -eq 0 ]; then
+    echo ""
+    warn "No collectors matched '${ONLY_COLLECTORS}'. Valid names:"
+    for _vf in "$SCRIPT_DIR"/collectors/[0-9]*.sh; do
+        [ -f "$_vf" ] || continue
+        echo "    $(basename "$_vf" .sh | sed 's/^[0-9]*-//')"
+    done
+    echo ""
+fi
 
 # ── Fix ownership ────────────────────────────────────────────────────────────
 
