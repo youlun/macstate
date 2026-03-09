@@ -95,3 +95,58 @@ def sample_snapshot(tmp_path):
     (snap_dir / "system_info.txt").write_text("macOS 14.0\nDarwin Kernel\n")
 
     return snap_dir
+
+
+@pytest.fixture
+def sample_snapshot_pair(tmp_path):
+    """Create two snapshot directories with deliberate differences for diff tests."""
+    import sys
+
+    sys.path.insert(0, str(PROJECT_DIR / "lib"))
+    from fs_index import create_schema
+
+    # Snapshot A (before)
+    snap_a = tmp_path / "snap_a"
+    snap_a.mkdir()
+    db_a = sqlite3.connect(str(snap_a / "filesystem.db"), isolation_level=None)
+    create_schema(db_a)
+    db_a.execute("INSERT INTO metadata VALUES ('snapshot_time', '2024-01-15T10:00:00Z')")
+    db_a.execute("INSERT INTO metadata VALUES ('hostname', 'test-machine')")
+    db_a.execute(
+        "INSERT INTO files VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("/tmp/keep.txt", "f", 100, "2024-01-15T10:00:00Z", "644", "u", "s", 1, None, None),
+    )
+    db_a.execute(
+        "INSERT INTO files VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("/tmp/removed.txt", "f", 50, "2024-01-15T10:00:00Z", "644", "u", "s", 2, None, None),
+    )
+    db_a.execute(
+        "INSERT INTO dotfile_contents VALUES (?, ?, ?)",
+        ("/Users/test/.zshrc", "export OLD=1", "aaa"),
+    )
+    db_a.close()
+    (snap_a / "system_info.txt").write_text("macOS 14.0\n")
+
+    # Snapshot B (after)
+    snap_b = tmp_path / "snap_b"
+    snap_b.mkdir()
+    db_b = sqlite3.connect(str(snap_b / "filesystem.db"), isolation_level=None)
+    create_schema(db_b)
+    db_b.execute("INSERT INTO metadata VALUES ('snapshot_time', '2024-01-16T10:00:00Z')")
+    db_b.execute("INSERT INTO metadata VALUES ('hostname', 'test-machine')")
+    db_b.execute(
+        "INSERT INTO files VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("/tmp/keep.txt", "f", 200, "2024-01-16T10:00:00Z", "644", "u", "s", 1, None, None),
+    )
+    db_b.execute(
+        "INSERT INTO files VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("/tmp/newfile.txt", "f", 75, "2024-01-16T10:00:00Z", "644", "u", "s", 3, None, None),
+    )
+    db_b.execute(
+        "INSERT INTO dotfile_contents VALUES (?, ?, ?)",
+        ("/Users/test/.zshrc", "export NEW=1", "bbb"),
+    )
+    db_b.close()
+    (snap_b / "system_info.txt").write_text("macOS 14.1\n")
+
+    return snap_a, snap_b
