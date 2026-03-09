@@ -26,6 +26,8 @@ lib/
   fs_index.py              Python filesystem indexer: os.walk → SQLite
   diff.sh                  Diff engine: SQL views + text comparison
   json_export.py           JSON export mode
+  html_export.py           HTML viewer export (self-contained)
+  viewer_template.html     HTML/CSS/JS template for the viewer
 collectors/
   00-system-info.sh        sw_vers, uname, hardware profile
   01-filesystem.sh         Invokes fs_index.py
@@ -125,6 +127,10 @@ Opens `filesystem.db` in interactive `sqlite3` shell. Useful for ad-hoc explorat
 ### Export JSON mode (`--export-json snap`)
 
 Combines SQLite metadata/files/dotfile_contents with all `.txt` collector files into a single JSON document.
+
+### View mode (`--view snap` or `--view snap1 snap2`)
+
+Generates a self-contained HTML file with all CSS/JS inline. Single-snapshot mode shows metadata, filesystem stats, collector outputs, and dotfile contents. Diff mode shows file changes, preference diffs (unified format), and dotfile diffs. Respects system light/dark mode preference. Auto-opens in the default browser.
 
 ## SQLite schema
 
